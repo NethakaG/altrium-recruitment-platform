@@ -1,0 +1,4 @@
+project_id = "altrium-cv-submission-portal"
+
+[functions.submit-cv]
+verify_jwt = false
