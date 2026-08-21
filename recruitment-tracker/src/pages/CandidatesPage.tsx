@@ -49,7 +49,7 @@ export function CandidatesPage({ role, basePath }: { role: StaffRole; basePath: 
     <section className="candidate-summary">
       <div><span>Active</span><strong>{candidates.filter((candidate) => candidate.application_status === 'Active').length}</strong></div>
       <div><span>CVs processed</span><strong>{candidates.filter((candidate) => candidate.processing_status === 'Processed').length}</strong></div>
-      <div><span>Needs review</span><strong>{candidates.filter((candidate) => candidate.processing_status === 'Failed').length}</strong></div>
+      <div><span>Shortlisted</span><strong>{candidates.filter((candidate) => candidate.screening?.decision === 'Shortlisted').length}</strong></div>
     </section>
 
     <section className="candidate-list-card">
@@ -58,13 +58,14 @@ export function CandidatesPage({ role, basePath }: { role: StaffRole; basePath: 
         <label className="filter-field"><span>Status</span><select value={status} onChange={(event) => setStatus(event.target.value)}><option>All</option><option>Active</option><option>Rejected</option><option>Hired</option><option>Withdrawn</option></select></label>
       </div>
       {filtered.length ? <div className="position-table-wrap"><table className="position-table candidate-table">
-        <thead><tr><th>Candidate</th><th>Position</th><th>Current stage</th><th>Status</th><th>CV processing</th><th>Submitted</th><th><span className="sr-only">Open</span></th></tr></thead>
+        <thead><tr><th>Candidate</th><th>Position</th><th>Current stage</th><th>Status</th><th>Screening</th><th>Rank</th><th>Submitted</th><th><span className="sr-only">Open</span></th></tr></thead>
         <tbody>{filtered.map((candidate) => <tr key={candidate.id}>
           <td><AppLink to={`${basePath}/${candidate.id}`} className="position-title-link">{candidate.candidate_name || 'Legacy submission'}</AppLink><span>{candidate.candidate_email || 'Contact details unavailable'}</span></td>
           <td>{candidate.position?.title || 'Unknown position'}<span>{candidate.position?.department}</span></td>
           <td><span className="candidate-stage">{candidate.current_stage?.name || 'Stage unavailable'}</span></td>
           <td><span className={`application-badge application-${candidate.application_status.toLowerCase()}`}>{candidate.application_status}</span></td>
-          <td><span className={`processing-badge processing-${candidate.processing_status.toLowerCase()}`}>{candidate.processing_status}</span></td>
+          <td>{candidate.screening?.decision ? <span className={`screening-decision screening-decision-${candidate.screening.decision.toLowerCase()}`}>{candidate.screening.decision} · {Number(candidate.screening.total_score).toFixed(1)}</span> : <span className={`processing-badge processing-${candidate.processing_status.toLowerCase()}`}>{candidate.processing_status === 'Processed' ? 'Awaiting close' : candidate.processing_status}</span>}</td>
+          <td>{candidate.screening?.rank ? <strong className="candidate-rank">#{candidate.screening.rank}</strong> : '—'}</td>
           <td>{formatDate(candidate.submitted_at)}</td>
           <td><AppLink to={`${basePath}/${candidate.id}`} className="row-action">Review →</AppLink></td>
         </tr>)}</tbody>

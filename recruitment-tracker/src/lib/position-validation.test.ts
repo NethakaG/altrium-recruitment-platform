@@ -13,8 +13,8 @@ const validInput: PositionInput = {
 }
 
 const positions: Position[] = [
-  { id: '1', title: 'Marketing Intern', department: 'Marketing', description: 'A', requirements: null, qualifications: null, hiring_manager: 'Nadia Silva', opening_date: '2026-08-17', status: 'Open', workflow_configured: true, created_at: '', updated_at: '' },
-  { id: '2', title: 'Senior Software Engineer', department: 'Engineering', description: 'B', requirements: null, qualifications: null, hiring_manager: 'Alex Perera', opening_date: '2026-08-17', status: 'Closed', workflow_configured: true, created_at: '', updated_at: '' },
+  { id: '1', title: 'Marketing Intern', department: 'Marketing', description: 'A', requirements: null, qualifications: null, hiring_manager: 'Nadia Silva', opening_date: '2026-08-17', status: 'Open', workflow_configured: true, rubric_configured: true, screening_status: 'Not started', screening_error: null, screening_started_at: null, screening_completed_at: null, closed_at: null, created_at: '', updated_at: '' },
+  { id: '2', title: 'Senior Software Engineer', department: 'Engineering', description: 'B', requirements: null, qualifications: null, hiring_manager: 'Alex Perera', opening_date: '2026-08-17', status: 'Closed', workflow_configured: true, rubric_configured: true, screening_status: 'Completed', screening_error: null, screening_started_at: null, screening_completed_at: null, closed_at: null, created_at: '', updated_at: '' },
 ]
 
 describe('position validation', () => {

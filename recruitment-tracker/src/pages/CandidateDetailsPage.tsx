@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { AppLink } from '../components/AppLink'
 import { advanceCandidate, getCandidate, requestCvDownload, retryCvExtraction, setCandidateStatus } from '../services/candidates'
 import { listWorkflowStages } from '../services/workflows'
+import { listScreeningRubrics } from '../services/screening'
 import type { Candidate } from '../types/candidates'
+import type { ScreeningRubric } from '../types/screening'
 import type { RecruitmentStage } from '../types/workflows'
 
 function formatDate(value: string) {
@@ -16,22 +18,25 @@ function formatSize(bytes: number) {
 export function CandidateDetailsPage({ candidateId, basePath, canManage }: { candidateId: string; basePath: string; canManage: boolean }) {
   const [candidate, setCandidate] = useState<Candidate | null>(null)
   const [stages, setStages] = useState<RecruitmentStage[]>([])
+  const [rubric, setRubric] = useState<ScreeningRubric | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState('')
 
   async function load() {
-    const [row, allStages] = await Promise.all([getCandidate(candidateId), listWorkflowStages()])
+    const [row, allStages, rubrics] = await Promise.all([getCandidate(candidateId), listWorkflowStages(), listScreeningRubrics()])
     setCandidate(row)
     setStages(row ? allStages.filter((stage) => stage.position_id === row.position_id) : [])
+    setRubric(row ? rubrics.find((item) => item.position_id === row.position_id) ?? null : null)
   }
 
   useEffect(() => {
     let mounted = true
-    void Promise.all([getCandidate(candidateId), listWorkflowStages()]).then(([row, allStages]) => {
+    void Promise.all([getCandidate(candidateId), listWorkflowStages(), listScreeningRubrics()]).then(([row, allStages, rubrics]) => {
       if (!mounted) return
       setCandidate(row)
       setStages(row ? allStages.filter((stage) => stage.position_id === row.position_id) : [])
+      setRubric(row ? rubrics.find((item) => item.position_id === row.position_id) ?? null : null)
     }).catch(() => { if (mounted) setMessage('We could not load this candidate.') })
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
@@ -59,6 +64,7 @@ export function CandidateDetailsPage({ candidateId, basePath, canManage }: { can
   const profile = candidate.extracted_profile || {}
   const orderedStages = [...stages].sort((a, b) => a.stage_order - b.stage_order)
   const isFinalStage = candidate.current_stage?.stage_order === orderedStages.at(-1)?.stage_order
+  const screeningFinalized = Boolean(candidate.screening?.decision)
 
   return <div className="page-shell candidate-detail-page">
     <AppLink to={basePath} className="back-link">← Back to candidates</AppLink>
@@ -73,16 +79,25 @@ export function CandidateDetailsPage({ candidateId, basePath, canManage }: { can
       <div className="candidate-detail-main">
         <section className="detail-section candidate-contact"><h2>Contact details</h2><dl><div><dt>Email</dt><dd>{candidate.candidate_email || profile.extracted_email || 'Not available'}</dd></div><div><dt>Phone</dt><dd>{candidate.candidate_phone || profile.extracted_phone || 'Not available'}</dd></div><div><dt>Location</dt><dd>{profile.location || 'Not stated in CV'}</dd></div></dl></section>
         <section className="detail-section"><h2>CV profile</h2><p>{profile.professional_summary || 'The structured CV profile is not available yet.'}</p>{profile.skills?.length ? <div className="skill-list">{profile.skills.map((skill) => <span key={skill}>{skill}</span>)}</div> : null}</section>
+        {screeningFinalized && candidate.screening ? <section className="detail-section candidate-screening-result">
+          <div className="screening-result-heading"><div><span>AI-assisted screening</span><h2>{candidate.screening.decision}</h2></div><div><strong>{Number(candidate.screening.total_score).toFixed(1)}</strong><small>Rank #{candidate.screening.rank}</small></div></div>
+          <p>{candidate.screening.summary}</p>
+          <div className="criterion-score-list">{candidate.screening.criterion_scores.map((score) => {
+            const criterion = rubric?.criteria.find((item) => item.id === score.criterion_id)
+            return <article key={score.criterion_id}><div><strong>{criterion?.name || score.criterion_id.replaceAll('_', ' ')}</strong><span>{criterion?.weight ?? 0}% weight</span></div><b>{Number(score.score).toFixed(0)}/100</b><p>{score.evidence}</p></article>
+          })}</div>
+          <small className="screening-audit-note">Model: {candidate.screening.screening_model} · Weighted ranking is calculated by the application, not selected by the model.</small>
+        </section> : null}
         <section className="detail-section"><h2>Experience</h2>{profile.experience?.length ? <div className="profile-timeline">{profile.experience.map((item, index) => <article key={`${item.employer}-${index}`}><strong>{item.title || 'Role not stated'}</strong><span>{item.employer}</span><small>{[item.start_date, item.end_date].filter(Boolean).join(' — ')}</small><p>{item.description}</p></article>)}</div> : <p>No experience entries were extracted.</p>}</section>
         <section className="detail-section"><h2>Education</h2>{profile.education?.length ? <div className="profile-timeline">{profile.education.map((item, index) => <article key={`${item.institution}-${index}`}><strong>{item.qualification || item.field || 'Qualification'}</strong><span>{item.institution}</span><small>{[item.start_year, item.end_year].filter(Boolean).join(' — ')}</small></article>)}</div> : <p>No education entries were extracted.</p>}</section>
       </div>
 
       <aside className="candidate-detail-aside">
         <section><span>Current stage</span><h2>{candidate.current_stage?.name || 'Unavailable'}</h2><ol>{orderedStages.map((stage) => <li key={stage.id} className={stage.id === candidate.current_stage_id ? 'current' : stage.stage_order < (candidate.current_stage?.stage_order ?? 0) ? 'complete' : ''}><i>{stage.stage_order}</i><span>{stage.name}</span></li>)}</ol></section>
-        {canManage && candidate.application_status === 'Active' ? <div className="candidate-actions">
+        {canManage && candidate.application_status === 'Active' && candidate.current_stage?.stage_type !== 'cv_review' ? <div className="candidate-actions">
           <button type="button" className="primary-button" disabled={Boolean(busy) || isFinalStage} onClick={() => void run('advance', () => advanceCandidate(candidate.id), 'Candidate moved to the next workflow stage.')}>{busy === 'advance' ? 'Moving…' : isFinalStage ? 'Final stage reached' : 'Move to next stage'}</button>
           <button type="button" className="danger-button" disabled={Boolean(busy)} onClick={() => void run('reject', () => setCandidateStatus(candidate.id, 'Rejected'), 'Candidate marked as rejected.')}>{busy === 'reject' ? 'Updating…' : 'Reject candidate'}</button>
-        </div> : null}
+        </div> : canManage && candidate.application_status === 'Active' && candidate.current_stage?.stage_type === 'cv_review' ? <div className="candidate-actions candidate-actions-locked"><strong>Awaiting automatic screening</strong><span>Progression is locked until the position closes and the full candidate pool is ranked.</span></div> : null}
         <section className="cv-file-card"><span>Original CV</span><strong>{candidate.original_filename}</strong><small>{formatSize(candidate.file_size)} · {candidate.processing_status}</small>{canManage && ['Pending', 'Failed'].includes(candidate.processing_status) ? <button type="button" className="text-button" disabled={Boolean(busy)} onClick={() => void run('retry', () => retryCvExtraction(candidate.id), 'CV extraction started. Refresh shortly to see the result.')}>{busy === 'retry' ? 'Starting…' : candidate.processing_status === 'Pending' ? 'Start extraction' : 'Retry extraction'}</button> : null}</section>
       </aside>
     </div>

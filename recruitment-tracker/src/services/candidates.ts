@@ -5,7 +5,10 @@ const candidateFields = `
   id,position_id,candidate_name,candidate_email,candidate_phone,original_filename,mime_type,file_size,
   processing_status,submitted_at,processed_at,current_stage_id,application_status,extracted_profile,extraction_model,
   position:positions!cv_submissions_position_id_fkey(title,department),
-  current_stage:recruitment_stages!cv_submissions_current_stage_id_fkey(id,name,stage_order,stage_type)
+  current_stage:recruitment_stages!cv_submissions_current_stage_id_fkey(id,name,stage_order,stage_type),
+  screening:candidate_screenings!candidate_screenings_submission_id_fkey(
+    criterion_scores,total_score,summary,screening_model,screened_at,rank,decision
+  )
 `
 
 export async function listCandidates(): Promise<Candidate[]> {

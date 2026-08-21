@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AppLink } from '../components/AppLink'
+import { ScreeningRubricPanel } from '../components/ScreeningRubricPanel'
 import { addWorkflowStage, moveWorkflowStage, removeWorkflowStage, validateWorkflow, workflowToDraft } from '../lib/workflow-validation'
 import { listPositions } from '../services/positions'
 import { listWorkflowStages, saveWorkflow } from '../services/workflows'
 import { listCandidatePositionIds } from '../services/candidates'
+import { listScreeningRubrics } from '../services/screening'
 import type { Position } from '../types/positions'
+import type { ScreeningRubric } from '../types/screening'
 import { stageLabels, stageTypes, type RecruitmentStage, type StageType, type WorkflowDraftStage, type WorkflowErrors } from '../types/workflows'
 
 function draftSignature(stages: WorkflowDraftStage[]) {
@@ -15,6 +18,7 @@ export function WorkflowPage({ selectedPositionId, canManage }: { selectedPositi
   const [positions, setPositions] = useState<Position[]>([])
   const [allStages, setAllStages] = useState<RecruitmentStage[]>([])
   const [candidatePositionIds, setCandidatePositionIds] = useState<Set<string>>(new Set())
+  const [rubrics, setRubrics] = useState<ScreeningRubric[]>([])
   const [draft, setDraft] = useState<WorkflowDraftStage[]>([])
   const [savedSignature, setSavedSignature] = useState('')
   const [errors, setErrors] = useState<WorkflowErrors>({})
@@ -25,12 +29,13 @@ export function WorkflowPage({ selectedPositionId, canManage }: { selectedPositi
 
   useEffect(() => {
     let mounted = true
-    void Promise.all([listPositions(), listWorkflowStages(), listCandidatePositionIds()])
-      .then(([positionRows, stageRows, positionIds]) => {
+    void Promise.all([listPositions(), listWorkflowStages(), listCandidatePositionIds(), listScreeningRubrics()])
+      .then(([positionRows, stageRows, positionIds, rubricRows]) => {
         if (!mounted) return
         setPositions(positionRows)
         setAllStages(stageRows)
         setCandidatePositionIds(positionIds)
+        setRubrics(rubricRows)
       })
       .catch(() => { if (mounted) setLoadError('We could not load the recruitment workflows.') })
       .finally(() => { if (mounted) setLoading(false) })
@@ -80,7 +85,7 @@ export function WorkflowPage({ selectedPositionId, canManage }: { selectedPositi
       const nextDraft = workflowToDraft(saved)
       setDraft(nextDraft)
       setSavedSignature(draftSignature(nextDraft))
-      setMessage('Workflow saved. This position is ready to receive CVs.')
+      setMessage('Workflow saved. Lock the screening rubric below to open applications.')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'The workflow could not be saved.')
     } finally {
@@ -95,6 +100,7 @@ export function WorkflowPage({ selectedPositionId, canManage }: { selectedPositi
   const usedTypes = new Set(draft.map((stage) => stage.stage_type))
   const workflowLocked = candidatePositionIds.has(selectedPosition.id)
   const editable = canManage && selectedPosition.status === 'Open' && !workflowLocked
+  const selectedRubric = rubrics.find((rubric) => rubric.position_id === selectedPosition.id) ?? null
 
   return <div className="page-shell workflow-page">
     <header className="page-header workflow-header"><div><span className="eyebrow dark">Function 2</span><h1>Recruitment workflows</h1><p>Build the ordered process each candidate follows for a specific position.</p></div><span className="status-pill"><span />{positions.filter((position) => position.workflow_configured).length} configured</span></header>
@@ -103,7 +109,7 @@ export function WorkflowPage({ selectedPositionId, canManage }: { selectedPositi
       <aside className="workflow-position-list">
         <span className="workflow-aside-title">Positions</span>
         {positions.map((position) => <AppLink key={position.id} to={`/workflows/${position.id}`} current={position.id === selectedPosition.id} className="workflow-position-link">
-          <strong>{position.title}</strong><span>{position.department}</span><em className={position.workflow_configured ? 'configured' : ''}>{position.workflow_configured ? 'Configured' : 'Workflow needed'}</em>
+          <strong>{position.title}</strong><span>{position.department}</span><em className={position.workflow_configured && position.rubric_configured ? 'configured' : ''}>{position.workflow_configured ? position.rubric_configured ? 'Ready' : 'Rubric needed' : 'Workflow needed'}</em>
         </AppLink>)}
       </aside>
 
@@ -144,5 +150,9 @@ export function WorkflowPage({ selectedPositionId, canManage }: { selectedPositi
         </div>}
       </section>
     </div>
+    <ScreeningRubricPanel key={selectedPosition.id} position={selectedPosition} rubric={selectedRubric} canManage={canManage} onSaved={(saved) => {
+      setRubrics((current) => [...current.filter((rubric) => rubric.position_id !== saved.position_id), saved])
+      setPositions((current) => current.map((position) => position.id === saved.position_id ? { ...position, rubric_configured: true } : position))
+    }} />
   </div>
 }

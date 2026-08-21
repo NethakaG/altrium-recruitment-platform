@@ -3,17 +3,18 @@ import type { Position, PositionRow } from '../types/position'
 
 export function filterAvailablePositions(rows: PositionRow[]): Position[] {
   return rows
-    .filter((position) => position.status === 'Open' && position.archived_at === null && position.workflow_configured)
+    .filter((position) => position.status === 'Open' && position.archived_at === null && position.workflow_configured && position.rubric_configured)
     .map(({ id, title, department }) => ({ id, title, department }))
 }
 
 export async function loadOpenPositions(): Promise<Position[]> {
   const { data, error } = await getSupabaseClient()
     .from('positions')
-    .select('id,title,department,status,archived_at,workflow_configured')
+    .select('id,title,department,status,archived_at,workflow_configured,rubric_configured')
     .eq('status', 'Open')
     .is('archived_at', null)
     .eq('workflow_configured', true)
+    .eq('rubric_configured', true)
     .order('title', { ascending: true })
 
   if (error) {

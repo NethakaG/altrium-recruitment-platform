@@ -13,6 +13,7 @@ const candidate: Candidate = {
   current_stage_id: 'stage-1', application_status: 'Active', extraction_model: 'gemini-2.5-flash',
   extracted_profile: { skills: ['TypeScript'] }, position: { title: 'Senior Software Engineer', department: 'Technology' },
   current_stage: { id: 'stage-1', name: 'CV Review', stage_order: 1, stage_type: 'cv_review' },
+  screening: null,
 }
 
 describe('CandidatesPage', () => {

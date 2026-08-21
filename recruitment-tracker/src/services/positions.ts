@@ -1,7 +1,7 @@
 import { getSupabaseClient } from '../lib/supabase'
 import type { Position, PositionInput } from '../types/positions'
 
-const positionFields = 'id,title,department,description,requirements,qualifications,hiring_manager,opening_date,status,workflow_configured,created_at,updated_at'
+const positionFields = 'id,title,department,description,requirements,qualifications,hiring_manager,opening_date,status,workflow_configured,rubric_configured,screening_status,screening_error,screening_started_at,screening_completed_at,closed_at,created_at,updated_at'
 
 function optionalValue(value: string) {
   const trimmed = value.trim()
@@ -51,15 +51,13 @@ export async function createPosition(input: PositionInput): Promise<Position> {
 }
 
 export async function closePosition(positionId: string): Promise<Position> {
-  const { data, error } = await getSupabaseClient()
-    .from('positions')
-    .update({ status: 'Closed' })
-    .eq('id', positionId)
-    .eq('status', 'Open')
-    .select(positionFields)
-    .maybeSingle()
-
-  if (error) throw error
-  if (!data) throw new Error('This position is no longer open or you do not have permission to close it.')
-  return data as Position
+  const { data, error } = await getSupabaseClient().functions.invoke<{ success?: boolean }>('screen-position', {
+    body: { positionId },
+  })
+  if (error || !data?.success) throw error ?? new Error('The position could not be closed for screening.')
+  const position = await getPosition(positionId)
+  if (!position) throw new Error('The closed position could not be reloaded.')
+  return position
 }
+
+export const retryPositionScreening = closePosition

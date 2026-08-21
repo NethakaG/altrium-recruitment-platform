@@ -11,6 +11,12 @@ export interface Position {
   opening_date: string
   status: PositionStatus
   workflow_configured: boolean
+  rubric_configured: boolean
+  screening_status: 'Not started' | 'Processing' | 'Completed' | 'Failed'
+  screening_error: string | null
+  screening_started_at: string | null
+  screening_completed_at: string | null
+  closed_at: string | null
   created_at: string
   updated_at: string
 }

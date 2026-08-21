@@ -4,6 +4,7 @@ import { ArrowUpRightIcon } from './components/icons'
 import { LoadingState } from './components/LoadingState'
 import { SubmissionForm } from './components/SubmissionForm'
 import { SubmissionSuccess } from './components/SubmissionSuccess'
+import { TestModeBulkUpload } from './components/TestModeBulkUpload'
 import { loadOpenPositions } from './services/positions'
 import type { Position } from './types/position'
 
@@ -22,6 +23,7 @@ export default function App() {
   const [positions, setPositions] = useState<Position[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
   const [submitted, setSubmitted] = useState(false)
+  const [testMode, setTestMode] = useState(false)
   const successRef = useRef<HTMLDivElement>(null)
 
   const fetchPositions = useCallback(async () => {
@@ -47,7 +49,7 @@ export default function App() {
     <div className="site-shell">
       <header className="site-header">
         <BrandMark />
-        <span className="header-label">Public application portal</span>
+        <div className="header-actions"><span className="header-label">Public application portal</span><button type="button" role="switch" aria-checked={testMode} className={`test-mode-toggle ${testMode ? 'test-mode-toggle-on' : ''}`} onClick={() => { setTestMode((current) => !current); setSubmitted(false) }}><span className="toggle-track"><i /></span><strong>Test mode</strong></button></div>
       </header>
 
       <main>
@@ -74,7 +76,7 @@ export default function App() {
 
           <div className="form-card">
             <div ref={successRef} tabIndex={-1}>
-              {submitted ? (
+              {testMode && loadState === 'ready' ? <TestModeBulkUpload positions={positions} /> : submitted ? (
                 <SubmissionSuccess
                   onReset={() => {
                     setSubmitted(false)

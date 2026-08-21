@@ -1,4 +1,5 @@
 import type { StageType } from './workflows'
+import type { CandidateScreening } from './screening'
 
 export type ApplicationStatus = 'Active' | 'Rejected' | 'Hired' | 'Withdrawn'
 export type ProcessingStatus = 'Pending' | 'Processing' | 'Processed' | 'Failed'
@@ -61,4 +62,5 @@ export interface Candidate {
   extraction_model: string | null
   position: CandidatePosition
   current_stage: CandidateStage | null
+  screening: CandidateScreening | null
 }

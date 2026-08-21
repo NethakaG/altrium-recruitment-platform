@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getCandidate } from '../services/candidates'
 import { listWorkflowStages } from '../services/workflows'
+import { listScreeningRubrics } from '../services/screening'
 import type { Candidate } from '../types/candidates'
 import { CandidateDetailsPage } from './CandidateDetailsPage'
 
@@ -9,6 +10,7 @@ vi.mock('../services/candidates', () => ({
   getCandidate: vi.fn(), advanceCandidate: vi.fn(), requestCvDownload: vi.fn(), retryCvExtraction: vi.fn(), setCandidateStatus: vi.fn(),
 }))
 vi.mock('../services/workflows', () => ({ listWorkflowStages: vi.fn() }))
+vi.mock('../services/screening', () => ({ listScreeningRubrics: vi.fn() }))
 
 const candidate: Candidate = {
   id: 'candidate-1', position_id: 'position-1', candidate_name: 'Test Candidate', candidate_email: 'candidate@example.com',
@@ -18,6 +20,7 @@ const candidate: Candidate = {
   extracted_profile: { professional_summary: 'Software engineer.', skills: ['TypeScript'], education: [], experience: [] },
   position: { title: 'Senior Software Engineer', department: 'Technology' },
   current_stage: { id: 'stage-1', name: 'CV Review', stage_order: 1, stage_type: 'cv_review' },
+  screening: null,
 }
 
 describe('CandidateDetailsPage', () => {
@@ -27,6 +30,7 @@ describe('CandidateDetailsPage', () => {
       { id: 'stage-1', position_id: 'position-1', name: 'CV Review', stage_order: 1, stage_type: 'cv_review' },
       { id: 'stage-2', position_id: 'position-1', name: 'Final Decision', stage_order: 2, stage_type: 'final_decision' },
     ])
+    vi.mocked(listScreeningRubrics).mockResolvedValue([])
   })
 
   it('shows extracted details and management controls for HR', async () => {
@@ -34,7 +38,8 @@ describe('CandidateDetailsPage', () => {
     expect(await screen.findByRole('heading', { name: 'Test Candidate' })).toBeInTheDocument()
     expect(screen.getByText('candidate@example.com')).toBeInTheDocument()
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Move to next stage' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Reject candidate' })).toBeInTheDocument()
+    expect(screen.getByText('Awaiting automatic screening')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Move to next stage' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reject candidate' })).not.toBeInTheDocument()
   })
 })

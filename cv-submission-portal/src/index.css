@@ -50,6 +50,14 @@ button:disabled { cursor: wait; }
 .brand-copy strong { color: #fff; font-size: 15px; letter-spacing: .16em; }
 .brand-copy small { color: rgba(255,255,255,.62); font-size: 11px; letter-spacing: .03em; }
 .header-label { font-size: 11px; color: #a3a3a3; letter-spacing: 0.13em; text-transform: uppercase; }
+.header-actions { display: flex; align-items: center; gap: 22px; }
+.test-mode-toggle { padding: 7px 10px 7px 8px; display: flex; align-items: center; gap: 8px; color: #b7b7b7; background: rgb(255 255 255 / .06); border: 1px solid rgb(255 255 255 / .16); border-radius: 999px; }
+.test-mode-toggle strong { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.toggle-track { width: 30px; height: 18px; padding: 2px; display: flex; background: #5b5b5b; border-radius: 999px; transition: 150ms; }
+.toggle-track i { width: 14px; height: 14px; background: white; border-radius: 50%; transition: transform 150ms; }
+.test-mode-toggle-on { color: var(--accent); border-color: rgb(252 180 0 / .45); background: rgb(252 180 0 / .08); }
+.test-mode-toggle-on .toggle-track { background: var(--accent); }
+.test-mode-toggle-on .toggle-track i { background: var(--black); transform: translateX(12px); }
 
 .hero {
   min-height: calc(100vh - 82px - 58px);
@@ -143,6 +151,32 @@ button:disabled { cursor: wait; }
 .privacy-note { display: flex; justify-content: center; align-items: flex-start; gap: 7px; color: #7d8682; font-size: 10px; line-height: 1.45; margin: 13px 8px 0; text-align: center; }
 .privacy-note svg { width: 14px; flex: 0 0 auto; color: #8a6500; }
 
+.test-mode-form { min-height: 620px; }
+.test-mode-warning { margin: -10px 0 24px; padding: 13px 14px; display: grid; gap: 4px; color: #624800; background: var(--soft-accent); border-left: 3px solid var(--accent); }
+.test-mode-warning strong { font-size: 11px; }
+.test-mode-warning span { font-size: 10px; line-height: 1.45; }
+.field-group > label.bulk-drop-zone { min-height: 116px; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--ink); background: #fbfaf7; border: 1px dashed #c9c3b7; border-radius: 10px; text-align: center; cursor: pointer; }
+.bulk-drop-zone:hover, .bulk-drop-zone:has(input:focus-visible) { border-color: var(--accent); background: #fffaeb; box-shadow: 0 0 0 3px rgb(252 180 0 / .14); }
+.bulk-drop-zone input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.bulk-drop-zone .upload-icon { margin-bottom: 8px; }
+.bulk-drop-zone strong { display: block; font-size: 13px; }
+.bulk-drop-zone > span:last-child { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+.bulk-file-list { max-height: 240px; margin: -4px 0 18px; display: grid; gap: 8px; overflow-y: auto; }
+.bulk-file { padding: 11px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #f7f6f2; border: 1px solid #e2dfd6; border-left: 3px solid #aaa; border-radius: 8px; }
+.bulk-file > div { min-width: 0; display: grid; gap: 3px; }
+.bulk-file strong { overflow: hidden; color: var(--ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.bulk-file span, .bulk-file small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+.bulk-file-uploading { border-left-color: var(--accent); }
+.bulk-file-submitted { border-left-color: #6c8b48; background: #f4f8ee; }
+.bulk-file-failed { border-left-color: #b6483f; background: #fcf3f1; }
+.bulk-file button { width: 28px; height: 28px; display: grid; place-items: center; flex: 0 0 auto; color: #736f68; background: transparent; border: 0; border-radius: 50%; }
+.bulk-file button:hover { background: #e7e4dc; }
+.bulk-file button svg { width: 14px; }
+.bulk-progress { margin: 0 0 14px; padding: 12px 14px; display: grid; gap: 3px; color: #3d5721; background: #edf4e4; border-left: 3px solid #6c8b48; }
+.bulk-progress strong { font-size: 11px; }
+.bulk-progress span { font-size: 10px; }
+.bulk-retry-button { margin: 0 0 14px; }
+
 .error-message { display: flex; gap: 10px; align-items: flex-start; color: #8f342e; background: #f8e9e6; border-left: 3px solid #b6483f; padding: 12px 14px; margin: 0 0 18px; }
 .error-message > span { width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; font-size: 10px; font-weight: 800; }
 .error-message p { margin: 0; font-size: 12px; line-height: 1.5; }
@@ -182,6 +216,7 @@ footer { height: 58px; padding: 0 clamp(24px, 5vw, 76px); display: flex; align-i
   .contact-field-wide { grid-column: auto; }
   .site-header { height: 68px; }
   .header-label { display: none; }
+  .header-actions { gap: 0; }
   .hero { min-height: auto; padding: 48px 18px 58px; gap: 46px; }
   .hero-copy h1 { font-size: clamp(48px, 15vw, 68px); }
   .hero-intro { font-size: 15px; margin: 24px 0 32px; }

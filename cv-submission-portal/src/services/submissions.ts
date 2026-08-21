@@ -86,3 +86,20 @@ export async function submitCv(
 
   return data
 }
+
+export async function submitTestCv(positionId: string, file: File): Promise<SubmissionResult> {
+  const body = new FormData()
+  body.append('positionId', positionId)
+  body.append('cv', file)
+
+  const { data, error } = await getSupabaseClient().functions.invoke<SubmissionResult>('submit-test-cv', { body })
+  if (error) {
+    let payload: ErrorPayload = {}
+    if (error instanceof FunctionsHttpError) {
+      try { payload = (await error.context.json()) as ErrorPayload } catch { /* Candidate-safe fallback below. */ }
+    }
+    throw new SubmissionError(payload.error ?? "We couldn't submit this CV. Please retry it.", payload.code ?? 'SUBMISSION_FAILED')
+  }
+  if (!data?.success) throw new SubmissionError("We couldn't submit this CV. Please retry it.")
+  return data
+}
