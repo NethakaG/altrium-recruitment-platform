@@ -1,39 +1,76 @@
-# Altrium Careers — CV Submission Portal
+# Altrium Careers — Public CV Submission Portal
 
-A public careers portal where candidates provide contact details, select an open Altrium position and securely submit one CV. Server-side processing can extract a structured profile from PDF CVs; private review remains in the separate internal recruitment tracker.
+Public candidate-facing portal for the Altrium Recruitment Platform. Candidates provide their contact details, choose an available position, and submit one PDF CV. The portal shares a Supabase backend with the private recruitment tracker.
+
+## Live deployment
+
+- Public portal: https://altrium-recruitment-platform.nethaka-galagedera.workers.dev/
+- Source repository: https://github.com/NethakaG/altrium-recruitment-platform
+
+The repository is private. The frontend is deployed through Cloudflare and the backend runs in Supabase.
+
+## Current Sprint 1 behaviour
+
+### Normal candidate submission
+
+1. The browser loads positions that are Open and have both a configured workflow and locked screening rubric.
+2. The candidate enters a full name, valid email address, optional phone number, selects a position, and chooses one PDF CV.
+3. The `submit-cv` Edge Function revalidates the origin, position, contact details, file size, MIME type, and PDF signature.
+4. The CV is saved in the private `candidate-cvs` Storage bucket and a private application record is created at CV Review.
+5. Gemini extracts a structured candidate profile in the background.
+6. The candidate sees only a success or candidate-safe error message. Internal stages, extraction details, scores, ranks, and decisions are never exposed publicly.
+
+PDF files are limited to 10 MB. DOC and DOCX files are intentionally rejected so every accepted CV can use the same automatic document-processing flow.
+
+### Duplicate prevention
+
+Applications are unique by normalized candidate email and position:
+
+- the same email cannot apply twice to the same position;
+- the same email may apply to different positions;
+- a database unique index provides the final concurrency-safe check;
+- a rejected duplicate does not overwrite the existing candidate or create another stored CV.
+
+### Temporary Test Mode
+
+The header currently includes an unauthenticated **Test mode** toggle for demonstration and acceptance testing. It allows up to 15 PDF CVs to be submitted to one open position. Every successful file follows the real extraction, duplicate-checking, Storage, and application flow; it does not create fake or isolated test records.
+
+Test Mode uses two concurrent workers. Gemini free-tier request-per-minute and daily limits can therefore interrupt larger batches. Use smaller batches when testing. This temporary public control must be removed before the portal is opened for real recruitment.
+
+## Position closure and screening
+
+The public portal does not perform or display candidate ranking. After HR closes a position in the private tracker, the backend:
+
+1. removes the position from the public list immediately;
+2. scores every active, processed application against the position's locked rubric;
+3. calculates weighted totals and independent ranks for that position;
+4. shortlists the configured number of candidates;
+5. automatically rejects the remaining candidates;
+6. moves shortlisted candidates to the second workflow stage only after the complete pool succeeds.
+
+Gemini failures or quota exhaustion leave the position closed and expose a retry control only in the private tracker.
+
+## Security boundary
+
+- The browser contains only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+- The Supabase service-role key and `GEMINI_API_KEY` are Edge Function secrets and must never be placed in frontend environment variables or committed.
+- Candidate rows and CV files are private and inaccessible to anonymous clients.
+- Staff CV downloads use short-lived signed URLs created after authenticated role checks.
+- Edge Functions validate allowed browser origins through `ALLOWED_ORIGINS`.
+- If a database insert fails after upload, the submission function attempts to remove the orphaned file.
+
+CORS is not an abuse-prevention mechanism. Add rate limiting and/or CAPTCHA before using the public endpoint for a high-traffic recruitment campaign.
 
 ## Technology
 
-- React 19 + Vite + TypeScript
-- Tailwind CSS
+- React 19, TypeScript 6, and Vite 8
+- Tailwind CSS 4
 - Supabase JavaScript client
-- Supabase Postgres, private Storage, and an Edge Function
-- Vitest + Testing Library
+- Supabase Postgres, Auth, private Storage, and Edge Functions
+- Google Gemini structured output
+- Vitest and Testing Library
 
-## How the submission works
-
-```text
-Browser
-  ├─ reads only Open, non-archived positions with a configured workflow through RLS
-  └─ sends verified contact details + positionId + one CV to submit-cv
-                              │
-                              ▼
-                    Supabase Edge Function
-                      1. validates origin
-                      2. validates the position again
-                      3. validates size, MIME type, and file signature
-                      4. uploads to the private candidate-cvs bucket
-                      5. inserts a private candidate submission at CV Review
-                      6. processes PDF CVs with Gemini in a background task
-```
-
-The browser never receives a service-role key, Gemini key, CV URL, submission ID, or another candidate's data. If the database insert fails after upload, the function attempts to remove the orphaned file.
-
-Duplicate applications are blocked using the normalized candidate email plus position ID. The same email can apply to different positions, while a second application to the same position receives a clear duplicate message. A case-insensitive database index provides the final race-safe guarantee.
-
-Gemini returns schema-constrained factual profile data only. Applicant-provided name and email remain authoritative, missing CV information is stored as blank, and this step performs no ranking or hiring recommendation. The portal accepts PDF CVs only so every accepted document can follow the automatic extraction flow.
-
-## Local installation
+## Local setup
 
 Requirements: Node.js 20.19+ and npm.
 
@@ -41,47 +78,44 @@ Requirements: Node.js 20.19+ and npm.
 npm install
 ```
 
-Copy `.env.example` to `.env` and add the browser-safe values from **Supabase Dashboard → Project Settings → API**:
+Copy `.env.example` to `.env` and add the browser-safe Supabase values:
 
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key
 ```
 
-Never use a secret key or the legacy `service_role` key in a `VITE_` variable. Vite embeds these variables in the public browser bundle.
-
-Start the site:
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-The local page is normally available at `http://127.0.0.1:5173` or the URL printed by Vite.
+Vite normally serves the portal at `http://127.0.0.1:5173` or the URL printed in the terminal.
 
-## Supabase setup
+## Supabase backend
 
-The Supabase project must already contain `public.positions` with at least the fields described below:
+The portal-side migrations create and harden candidate submissions, private Storage, PDF-only validation, anonymous open-position visibility, and duplicate prevention. Tracker-side migrations add workflows, staff authorization, candidate management, locked screening rubrics, automatic ranking, and secure progression.
 
-- `id` UUID primary key
-- `title`
-- `department`
-- `status` using `Open`, `Paused`, or `Closed`
-- `archived_at` nullable timestamp
-- `workflow_configured` boolean
+Edge Functions in this project:
 
-The migration in `supabase/migrations`:
+| Function | Purpose | Authentication |
+| --- | --- | --- |
+| `submit-cv` | Normal public application and background extraction | Public endpoint with strict validation and allowed origins |
+| `submit-test-cv` | Temporary bulk-test submission with synchronous extraction | Public testing endpoint with strict validation and allowed origins |
+| `process-cv` | Retry or start structured CV extraction | Authenticated staff |
+| `get-cv-download` | Create a 60-second signed CV URL | Authenticated permitted staff |
+| `screen-position` | Score all processed candidates and finalize ranking | Authenticated IT Admin or HR |
 
-- creates `public.cv_submissions` and its indexes;
-- enables RLS and revokes public access to submission rows;
-- allows anonymous clients to select only Open, non-archived positions whose recruitment workflow has been configured;
-- creates or hardens the private `candidate-cvs` bucket;
-- enforces the supported MIME types and 10 MB bucket limit.
+Required Edge Function secrets:
 
-The Edge Function performs all privileged uploads and inserts with Supabase's server-side service-role secret. It revalidates every browser input and returns only a success flag or candidate-safe error.
+```text
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://public-site.example,https://private-tracker.example
+GEMINI_API_KEY=your_server_side_key
+GEMINI_MODEL=gemini-3.5-flash  # optional; this is the current default
+```
 
-### Apply and deploy with the Supabase CLI
-
-Install/authenticate the current CLI, then run these commands from this directory:
+Link and apply migrations using a current Supabase CLI:
 
 ```bash
 npx supabase login
@@ -90,93 +124,31 @@ npx supabase db push --dry-run
 npx supabase db push
 ```
 
-Set the allowed browser origins as a comma-separated Edge Function secret. Include local development and every deployed production/preview origin that should submit CVs:
+Deploy the required functions after reviewing their JWT configuration and `supabase/config.toml`. `submit-cv` is intentionally public because candidates do not authenticate; staff-only functions must retain their authorization checks.
 
-```bash
-npx supabase secrets set ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://your-site.example
-```
+## Cloudflare deployment
 
-Include the private tracker origin as well because authenticated CV download and retry actions use the same allowlist. `GEMINI_API_KEY` must be stored only as a Supabase Edge Function secret. `GEMINI_MODEL` is optional and defaults to `gemini-3.5-flash`.
-
-Deploy the public function:
-
-```bash
-npx supabase functions deploy submit-cv --no-verify-jwt
-```
-
-`submit-cv` intentionally has JWT verification disabled because candidates do not log in. Security comes from its narrowly scoped server-side validation, private Storage/RLS design, non-disclosure of internal data, and restricted browser origins. CORS is not a substitute for abuse prevention; add CAPTCHA and/or rate limiting before using this endpoint for a high-traffic public recruitment campaign.
-
-After applying the migration, review **Database → Advisors** and the Storage policies in the Supabase Dashboard. An existing broad policy on `storage.objects` from another application should never include the `candidate-cvs` bucket.
-
-## Hosting on Vercel or Netlify
-
-Push the project to GitHub without `.env`. Connect the repository to either host and configure:
+The GitHub repository contains both frontends. The Cloudflare application for this portal must use:
 
 | Setting | Value |
 | --- | --- |
-| Root/base directory | `cv-submission-portal` if the Git repository begins one folder above this project |
+| Root directory | `cv-submission-portal` |
 | Build command | `npm run build` |
-| Publish/output directory | `dist` |
+| Build output | `dist` |
 | Environment variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` |
 
-After the first deployment, add the exact production URL to `ALLOWED_ORIGINS` in Supabase and redeploy the Edge Function if needed. Every later GitHub push can automatically produce a new frontend deployment; database migrations and Edge Function deployments remain explicit Supabase steps.
+Do not upload `.env`. After changing a production or preview URL, update `ALLOWED_ORIGINS` in Supabase.
 
 ## Commands
 
 ```bash
-npm run dev       # development server
-npm run test      # unit/component/security tests
-npm run lint      # static linting
-npm run build     # TypeScript + production build
-npm run preview   # preview the production bundle
+npm run dev
+npm run test
+npm run lint
+npm run build
+npm run preview
 ```
 
-## Automated coverage
+## Sprint boundary
 
-The test suite verifies:
-
-1. only Open positions with a configured workflow are returned;
-2. archived positions are excluded;
-3. a valid candidate name and email are required;
-4. a position and CV are required;
-5. duplicate applications show an email-specific error;
-6. unsupported file types are rejected;
-7. files over 10 MB are rejected;
-8. a valid CV starts submission;
-9. duplicate clicks cannot start a second submission;
-10. a successful submission shows the confirmation state;
-11. migration controls keep submission rows and CV objects private.
-
-## Manual test checklist
-
-Complete this after linking a development Supabase project:
-
-- [ ] Create one Open, non-archived position and confirm it remains hidden until its workflow is saved.
-- [ ] Save the position's workflow in the private tracker and confirm it then appears.
-- [ ] Confirm blank or invalid candidate name/email values are rejected.
-- [ ] Confirm Paused, Closed, and archived positions do not appear.
-- [ ] Confirm the page shows a clear empty state when no positions are open.
-- [ ] Try submitting with neither field selected and verify both errors.
-- [ ] Try `.txt`, empty, renamed/fake, and over-10-MB files and verify rejection.
-- [ ] Confirm DOC/DOCX files are rejected with the PDF-only message.
-- [ ] Choose a valid PDF and verify filename, size, and Remove.
-- [ ] Submit once and verify the button disables with “Submitting your CV…”.
-- [ ] Verify the success state contains no processing or ranking information.
-- [ ] Verify exactly one `cv_submissions` row exists with status `Pending`.
-- [ ] For a PDF CV, confirm processing changes from Pending/Processing to Processed and the structured profile appears in the private tracker.
-- [ ] Verify the file is stored at `<position-id>/<submission-id>/original_cv.<ext>`.
-- [ ] Verify `candidate-cvs` is private and cannot be listed/downloaded with the publishable key.
-- [ ] Close the selected position before submitting and verify the closed-position error.
-- [ ] Check desktop, tablet, and mobile layouts with keyboard-only navigation.
-
-## Current scope
-
-This version performs exactly:
-
-**Open Position → CV Upload → Successful Submission**
-
-It deliberately excludes authentication, candidate accounts, dashboards, application history, internal recruitment stages, bulk upload, interview management, scoring, reporting, and third-party job-platform integrations.
-
-## Future development
-
-Later backend work may consume `Pending` submissions, extract structured CV data with Google Gemini, compare candidates against job requirements, and send results to a separate internal recruitment tracker. No Gemini or other AI integration is included in this project.
+Sprint 1 covers public submission plus the private tracker's first four backlog features. Interview scheduling, interview feedback, broader pipeline management, final hiring completion, and management reporting remain later backlog work.
