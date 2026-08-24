@@ -11,7 +11,6 @@ const routeMeta: Record<string, { label: string; icon: typeof GridIcon }> = {
   '/positions': { label: 'Positions', icon: BriefcaseIcon },
   '/workflows': { label: 'Workflows', icon: SparkIcon },
   '/candidates': { label: 'Candidates', icon: FileIcon },
-  '/screening': { label: 'AI screening', icon: SparkIcon },
   '/assignments': { label: 'Assignments', icon: FileIcon },
   '/candidate-review': { label: 'Candidate review', icon: FileIcon },
   '/overview': { label: 'Recruitment overview', icon: GridIcon },

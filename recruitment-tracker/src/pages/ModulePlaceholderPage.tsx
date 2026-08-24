@@ -4,7 +4,6 @@ const titles: Record<string, string> = {
   '/staff-access': 'Staff access',
   '/positions': 'Positions',
   '/candidates': 'Candidates',
-  '/screening': 'AI screening',
   '/assignments': 'Assignments',
   '/candidate-review': 'Candidate review',
   '/overview': 'Recruitment overview',

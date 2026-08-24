@@ -8,7 +8,8 @@ describe('staff role access', () => {
 
   it('gives HR access to recruitment modules', () => {
     expect(canAccessPath('hr_recruiter', '/positions')).toBe(true)
-    expect(canAccessPath('hr_recruiter', '/screening')).toBe(true)
+    expect(canAccessPath('hr_recruiter', '/candidates')).toBe(true)
+    expect(canAccessPath('hr_recruiter', '/screening')).toBe(false)
   })
 
   it('allows every active role to view position routes', () => {

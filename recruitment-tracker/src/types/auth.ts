@@ -39,7 +39,7 @@ export const roleDefinitions: Record<StaffRole, RoleDefinition> = {
     shortLabel: 'HR',
     summary: 'Positions, workflows, CVs and screening',
     accent: '#fcb400',
-    routes: ['/', '/positions', '/workflows', '/candidates', '/screening'],
+    routes: ['/', '/positions', '/workflows', '/candidates'],
   },
   interviewer: {
     label: 'Interviewer',
