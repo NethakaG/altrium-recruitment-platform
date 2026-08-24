@@ -40,7 +40,7 @@ export default function App() {
   let content
 
   if (!allowed || (path === '/positions/new' && !canManage)) content = <UnauthorizedPage />
-  else if (path === '/') content = <DashboardPage role={profile.role} />
+  else if (path === '/') content = <DashboardPage />
   else if (path === '/positions') content = <PositionsPage canManage={canManage} />
   else if (path === '/positions/new') content = <CreatePositionPage />
   else if (path.startsWith('/positions/')) content = <PositionDetailsPage positionId={decodeURIComponent(path.slice('/positions/'.length))} canManage={canManage} />
