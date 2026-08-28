@@ -8,7 +8,9 @@ Private staff workspace for the Altrium Recruitment Platform. It shares Supabase
 - Public portal: https://altrium-recruitment-platform.nethaka-galagedera.workers.dev/
 - Source repository: https://github.com/NethakaG/altrium-recruitment-platform
 
-The repository is private. Both React frontends are deployed separately through Cloudflare.
+The source repository is public. Both React frontends are deployed separately through Cloudflare.
+
+Only browser-safe Supabase configuration belongs in the repository. Local `.env` files, Supabase service-role credentials, Gemini credentials, and staff passwords must remain uncommitted.
 
 ## Sprint 1 status
 

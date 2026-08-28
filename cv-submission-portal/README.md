@@ -7,7 +7,9 @@ Public candidate-facing portal for the Altrium Recruitment Platform. Candidates 
 - Public portal: https://altrium-recruitment-platform.nethaka-galagedera.workers.dev/
 - Source repository: https://github.com/NethakaG/altrium-recruitment-platform
 
-The repository is private. The frontend is deployed through Cloudflare and the backend runs in Supabase.
+The source repository is public. The frontend is deployed through Cloudflare and the backend runs in Supabase.
+
+Only browser-safe Supabase configuration belongs in the repository. Local `.env` files, Supabase service-role credentials, Gemini credentials, and staff passwords must remain uncommitted.
 
 ## Current Sprint 1 behaviour
 
