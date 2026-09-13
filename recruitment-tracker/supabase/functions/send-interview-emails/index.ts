@@ -3,10 +3,16 @@ import { createClient } from 'npm:@supabase/supabase-js@2.112.3'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function allowedOrigins() {
-  return [...new Set(['http://localhost:5173', 'http://127.0.0.1:5173', ...(Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map((item) => item.trim()).filter(Boolean)])]
+  return [...new Set([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+    ...(Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map((item) => item.trim()).filter(Boolean),
+  ])]
 }
 function reply(origin: string | null, status: number, body: Record<string, unknown>) {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-cron-secret', 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' }
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret', 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' }
   if (origin && allowedOrigins().includes(origin)) headers['Access-Control-Allow-Origin'] = origin
   return new Response(status === 204 ? null : JSON.stringify(body), { status, headers })
 }
