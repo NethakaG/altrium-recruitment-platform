@@ -6,6 +6,7 @@ import { listScreeningRubrics } from '../services/screening'
 import type { Candidate } from '../types/candidates'
 import type { ScreeningRubric } from '../types/screening'
 import type { RecruitmentStage } from '../types/workflows'
+import { InterviewSchedulingPanel } from '../components/InterviewSchedulingPanel'
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -88,6 +89,7 @@ export function CandidateDetailsPage({ candidateId, basePath, canManage }: { can
           })}</div>
           <small className="screening-audit-note">Model: {candidate.screening.screening_model} · Weighted ranking is calculated by the application, not selected by the model.</small>
         </section> : null}
+        {canManage ? <InterviewSchedulingPanel candidate={candidate} /> : null}
         <section className="detail-section"><h2>Experience</h2>{profile.experience?.length ? <div className="profile-timeline">{profile.experience.map((item, index) => <article key={`${item.employer}-${index}`}><strong>{item.title || 'Role not stated'}</strong><span>{item.employer}</span><small>{[item.start_date, item.end_date].filter(Boolean).join(' — ')}</small><p>{item.description}</p></article>)}</div> : <p>No experience entries were extracted.</p>}</section>
         <section className="detail-section"><h2>Education</h2>{profile.education?.length ? <div className="profile-timeline">{profile.education.map((item, index) => <article key={`${item.institution}-${index}`}><strong>{item.qualification || item.field || 'Qualification'}</strong><span>{item.institution}</span><small>{[item.start_year, item.end_year].filter(Boolean).join(' — ')}</small></article>)}</div> : <p>No education entries were extracted.</p>}</section>
       </div>

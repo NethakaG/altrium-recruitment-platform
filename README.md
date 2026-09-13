@@ -1,6 +1,6 @@
 # Altrium Recruitment Platform
 
-Altrium is a two-application recruitment platform built for the first four features of the finalized Sprint 1 Product Backlog. A public portal accepts candidate applications, while a protected internal tracker manages positions, workflows, candidates, and automatic CV screening. Both applications use the same Supabase backend.
+Altrium is a two-application recruitment platform. Sprint 1 covers position, workflow, candidate/CV and automatic screening management. Sprint 2 development adds interview scheduling and notifications to the protected tracker. Both applications use the same Supabase backend.
 
 ## Live applications
 
@@ -25,7 +25,11 @@ Each directory contains its own setup instructions, tests, Cloudflare configurat
 3. **Candidate and CV Management** — candidates submit PDF CVs, Gemini extracts structured profiles, staff can search and filter applications by position and stage, and authorized staff can progress shortlisted candidates.
 4. **AI-Assisted CV Screening and Filtering** — closing a position scores its processed candidates against a locked rubric, creates position-specific ranks, shortlists the configured number, and automatically rejects the remainder.
 
-The Overview reporting module and the IT Admin Staff Access interface are Sprint 2 placeholders. Interview scheduling, interview feedback, full pipeline management, final hiring completion, and management reporting are outside the current Sprint 1 scope.
+## Sprint 2 development
+
+Interview Scheduling and Notifications now includes one-interviewer assignments, role-specific interviewer profiles, a visual internal calendar, calculated Monday–Friday availability, 2026 Sri Lankan public-holiday blocking, meetings and unavailable periods, recruiter calendar selection, 15-minute conflict buffers, online/physical details, rescheduling, cancellation, planned-versus-actual times, Start/End Interview controls, email delivery tracking and queued 24-hour/1-hour reminders. The demo vacancy is Cloud Platform Engineer and Purnod is its configured senior engineering interviewer.
+
+Live Gmail delivery requires one-time Google OAuth secrets and a scheduled reminder trigger in Supabase. The three interviewer profiles are connected to active staff accounts in the live project; their private login and contact details are intentionally not committed. Interview feedback, final hiring completion and management reporting remain later Sprint 2 work.
 
 ## Roles
 

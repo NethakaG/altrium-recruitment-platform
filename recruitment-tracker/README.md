@@ -1,10 +1,11 @@
 # Altrium Recruitment Tracker
 
-Private staff workspace for the Altrium Recruitment Platform. It shares Supabase with the public CV submission portal and implements the first four finalized Product Backlog features for Sprint 1.
+Private staff workspace for the Altrium Recruitment Platform. It shares Supabase with the public CV submission portal, implements the four finalized Sprint 1 features, and contains the Sprint 2 Interview Scheduling and Notifications implementation.
 
 ## Live deployment
 
 - Private tracker: https://altrium-recruitment-tracker.nethaka-galagedera.workers.dev/login
+- Privacy notice: https://altrium-recruitment-tracker.nethaka-galagedera.workers.dev/privacy
 - Public portal: https://altrium-recruitment-platform.nethaka-galagedera.workers.dev/
 - Source repository: https://github.com/NethakaG/altrium-recruitment-platform
 
@@ -72,7 +73,39 @@ Only browser-safe Supabase configuration belongs in the repository. Local `.env`
 
 Supabase Auth users without an active `staff_profiles` record and assigned role cannot enter the workspace. Authorization is enforced by the protected frontend routes, Postgres privileges/RLS, and role-aware database functions.
 
-## Sprint 2 placeholders
+## Sprint 2 — Interview Scheduling and Notifications
+
+- IT Admin and HR schedule one eligible interviewer from a candidate profile once that candidate reaches an interview stage.
+- Purnod, Hovindi and Chathumina have separate active interviewer accounts and calendars in the live project. Their login and contact details are configured privately in Supabase and are not committed.
+- Each interviewer has a private Altrium calendar. Normal availability is calculated from Monday–Friday working hours of 9:00 AM–5:00 PM rather than entered manually.
+- Interviewers can add, edit, drag-to-move, and delete their own meetings or unavailable periods. Candidate interviews appear automatically and remain recruiter-controlled.
+- Recruiters see an interviewer's calendar read-only inside candidate scheduling. Personal event names are shown only as Busy.
+- Recruiters select the interviewer, duration, available calendar date and calculated time. The database rechecks the period before saving.
+- Weekends and the official 2026 Sri Lankan public holidays are blocked. Meetings, unavailable periods, interviews and the 15-minute post-interview buffer are removed from available times.
+- Online interviews require a meeting link; physical interviews require a location.
+- HR and IT Admin can view interviews, reschedule scheduled interviews, cancel them with a reason, and retry queued or failed emails.
+- The assigned interviewer can see the candidate/CV, start the interview, continue past the planned end time, and end it manually. Actual start and end timestamps are recorded.
+- Scheduling, rescheduling and cancellation emails are queued for both candidate and interviewer. Reminder records are queued for 24 hours and 1 hour before the interview.
+- Gmail delivery is server-side through the `send-interview-emails` Edge Function; the browser never receives Google credentials.
+
+The database migrations seed an open Cloud Platform Engineer demo vacancy with `CV Review → Technical Interview → Final Decision`, a locked five-criterion rubric, three role-specific interviewer profiles, normal working schedules, nine realistic calendar events and the official 2026 Sri Lankan holiday calendar. The live notification address is configured privately in Supabase rather than committed to this public repository.
+
+### Gmail configuration still required
+
+Configure the sender Gmail address and OAuth credentials as Edge Function secrets before real delivery:
+
+```text
+GMAIL_SENDER
+GMAIL_CLIENT_ID
+GMAIL_CLIENT_SECRET
+GMAIL_REFRESH_TOKEN
+INTERVIEW_CRON_SECRET
+ALLOWED_ORIGINS
+```
+
+Use OAuth offline access with the Gmail send scope; never store the Gmail password. The migration creates an inactive one-minute Cron job named `dispatch-interview-email-reminders`. Store `project_url` and `interview_cron_secret` in Supabase Vault, use the same secret value for the Edge Function's `INTERVIEW_CRON_SECRET`, then activate that job. Immediate messages can be sent or retried from the Interviews page once Gmail OAuth is configured.
+
+## Remaining Sprint 2 placeholders
 
 - The main Overview page currently keeps only the personalized greeting and active-workspace message. Role-specific statistics, progress summaries, and management reporting are marked for Sprint 2 under Backlog Feature 9.
 - Staff Access is a protected IT Admin route, but the in-app staff account-management interface is intentionally not implemented. Staff accounts and roles are currently managed through trusted Supabase administration.
@@ -138,7 +171,7 @@ npx supabase db push --dry-run
 npx supabase db push
 ```
 
-The Edge Functions used by the tracker are stored in the sibling `cv-submission-portal/supabase/functions` directory because both frontends share the same Supabase project. `ALLOWED_ORIGINS` must contain both local and deployed frontend origins. `GEMINI_API_KEY` and the optional `GEMINI_MODEL` belong only in Supabase Edge Function secrets.
+Sprint 1 Edge Functions are stored in the sibling `cv-submission-portal/supabase/functions` directory. Interview email delivery is stored at `recruitment-tracker/supabase/functions/send-interview-emails`. `ALLOWED_ORIGINS` must contain both local and deployed frontend origins. Gemini and Gmail credentials belong only in Supabase Edge Function secrets.
 
 ## Cloudflare deployment
 

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { validateLogin, type LoginErrors } from '../lib/login-validation'
 import { navigate } from '../lib/route'
 import { BriefcaseIcon, LockIcon, ShieldIcon, UsersIcon } from '../components/icons'
+import { AppLink } from '../components/AppLink'
 
 export function LoginPage() {
   const { login, error: authError } = useAuth()
@@ -59,7 +60,7 @@ export function LoginPage() {
             {authError && <div className="auth-error" role="alert">{authError}</div>}
             <button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in securely'}</button>
           </form>
-          <p className="support-note">Need access? Contact your Altrium IT Admin.</p>
+          <p className="support-note">Need access? Contact your Altrium IT Admin.<br /><AppLink to="/privacy">Privacy policy</AppLink></p>
         </div>
       </section>
     </main>

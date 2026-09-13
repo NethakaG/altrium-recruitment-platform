@@ -14,6 +14,10 @@ import { WorkflowPage } from './pages/WorkflowPage'
 import { CandidatesPage } from './pages/CandidatesPage'
 import { CandidateDetailsPage } from './pages/CandidateDetailsPage'
 import { UnauthorizedPage } from './pages/UnauthorizedPage'
+import { InterviewsPage } from './pages/InterviewsPage'
+import { AssignmentsPage } from './pages/AssignmentsPage'
+import { AvailabilityPage } from './pages/AvailabilityPage'
+import { PrivacyPage } from './pages/PrivacyPage'
 
 function LoadingScreen() {
   return <main className="state-page"><div className="loading-mark" aria-label="Checking staff access"><span>A</span></div></main>
@@ -24,11 +28,13 @@ export default function App() {
   const { status, profile } = useAuth()
 
   useEffect(() => {
-    if (status === 'signed_out' && path !== '/login') navigate('/login')
+    const isPublicPath = path === '/login' || path === '/privacy'
+    if (status === 'signed_out' && !isPublicPath) navigate('/login')
     if (status === 'active' && path === '/login') navigate('/')
-    if (status === 'pending' && path !== '/access-pending') navigate('/access-pending')
+    if (status === 'pending' && path !== '/access-pending' && path !== '/privacy') navigate('/access-pending')
   }, [path, status])
 
+  if (path === '/privacy') return <PrivacyPage />
   if (status === 'loading') return <LoadingScreen />
   if (path === '/login') return <LoginPage />
   if (status === 'pending' || path === '/access-pending') return <AccessPendingPage />
@@ -46,6 +52,9 @@ export default function App() {
   else if (path.startsWith('/positions/')) content = <PositionDetailsPage positionId={decodeURIComponent(path.slice('/positions/'.length))} canManage={canManage} />
   else if (path === '/workflows') content = <WorkflowPage canManage={canManage} />
   else if (path.startsWith('/workflows/')) content = <WorkflowPage selectedPositionId={decodeURIComponent(path.slice('/workflows/'.length))} canManage={canManage} />
+  else if (path === '/interviews') content = <InterviewsPage />
+  else if (path === '/assignments') content = <AssignmentsPage />
+  else if (path === '/availability') content = <AvailabilityPage />
   else if (path === candidatePath) content = <CandidatesPage role={profile.role} basePath={candidatePath} />
   else if (path.startsWith(`${candidatePath}/`)) content = <CandidateDetailsPage candidateId={decodeURIComponent(path.slice(candidatePath.length + 1))} basePath={candidatePath} canManage={canManageCandidates(profile.role)} />
   else content = <ModulePlaceholderPage path={path} role={profile.role} />
