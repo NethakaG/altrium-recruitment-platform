@@ -1,7 +1,7 @@
 import type { StageType } from './workflows'
 import type { CandidateScreening } from './screening'
 
-export type ApplicationStatus = 'Active' | 'Rejected' | 'Hired' | 'Withdrawn'
+export type ApplicationStatus = 'Active' | 'On Hold' | 'Rejected' | 'Hired' | 'Withdrawn'
 export type ProcessingStatus = 'Pending' | 'Processing' | 'Processed' | 'Failed'
 
 export interface EducationEntry {

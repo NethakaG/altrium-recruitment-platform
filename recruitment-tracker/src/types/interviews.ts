@@ -76,7 +76,7 @@ export interface Interview {
   actual_start: string | null
   actual_end: string | null
   cancellation_reason: string | null
-  candidate: { id: string; candidate_name: string | null; candidate_email: string | null } | null
+  candidate: { id: string; position_id: string; candidate_name: string | null; candidate_email: string | null } | null
   position: { title: string; department: string } | null
   stage: { name: string; stage_type: string } | null
   interviewer: InterviewerProfile | null

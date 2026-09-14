@@ -23,7 +23,7 @@ describe('staff role access', () => {
     expect(canManagePositions('interviewer')).toBe(false)
     expect(canManagePositions('hiring_manager')).toBe(false)
     expect(canManagePositions('management_user')).toBe(false)
-    expect(roleDefinitions.management_user.routes).toEqual(['/', '/positions', '/workflows', '/overview'])
+    expect(roleDefinitions.management_user.routes).toEqual(['/', '/positions', '/workflows', '/overview', '/final-decisions'])
   })
 
   it('maps each role to its candidate workspace and limits candidate changes', () => {
@@ -40,5 +40,13 @@ describe('staff role access', () => {
   it('keeps staff administration exclusive to IT Admin', () => {
     expect(canAccessPath('it_admin', '/staff-access')).toBe(true)
     expect(canAccessPath('hr_recruiter', '/staff-access')).toBe(false)
+  })
+
+  it('gives decision-making roles access to final decisions but not interviewers', () => {
+    expect(canAccessPath('it_admin', '/final-decisions')).toBe(true)
+    expect(canAccessPath('hr_recruiter', '/final-decisions')).toBe(true)
+    expect(canAccessPath('hiring_manager', '/final-decisions')).toBe(true)
+    expect(canAccessPath('management_user', '/final-decisions')).toBe(true)
+    expect(canAccessPath('interviewer', '/final-decisions')).toBe(false)
   })
 })

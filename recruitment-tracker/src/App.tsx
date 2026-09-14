@@ -18,6 +18,7 @@ import { InterviewsPage } from './pages/InterviewsPage'
 import { AssignmentsPage } from './pages/AssignmentsPage'
 import { AvailabilityPage } from './pages/AvailabilityPage'
 import { PrivacyPage } from './pages/PrivacyPage'
+import { FinalDecisionsPage } from './pages/FinalDecisionsPage'
 
 function LoadingScreen() {
   return <main className="state-page"><div className="loading-mark" aria-label="Checking staff access"><span>A</span></div></main>
@@ -55,6 +56,7 @@ export default function App() {
   else if (path === '/interviews') content = <InterviewsPage />
   else if (path === '/assignments') content = <AssignmentsPage />
   else if (path === '/availability') content = <AvailabilityPage />
+  else if (path === '/final-decisions') content = <FinalDecisionsPage role={profile.role} basePath={candidatePath} />
   else if (path === candidatePath) content = <CandidatesPage role={profile.role} basePath={candidatePath} />
   else if (path.startsWith(`${candidatePath}/`)) content = <CandidateDetailsPage candidateId={decodeURIComponent(path.slice(candidatePath.length + 1))} basePath={candidatePath} canManage={canManageCandidates(profile.role)} />
   else content = <ModulePlaceholderPage path={path} role={profile.role} />

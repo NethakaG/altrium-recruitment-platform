@@ -17,6 +17,10 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value))
 }
 
+function statusClass(value: string) {
+  return value.toLowerCase().replaceAll(' ', '-')
+}
+
 function pageCopy(role: StaffRole) {
   if (role === 'interviewer') return ['Assigned candidates', 'Candidates currently at an interview stage.']
   if (role === 'hiring_manager') return ['Candidate review', 'Candidates who have reached the management review stages.']
@@ -115,7 +119,7 @@ export function CandidatesPage({ role, basePath }: { role: StaffRole; basePath: 
         <label className="search-field"><span className="sr-only">Search candidates</span><input type="search" value={search} placeholder="Search candidate, role or stage" onChange={(event) => setSearch(event.target.value)} /></label>
         <label className="filter-field"><span>Position</span><select aria-label="Job position" value={positionId} onChange={(event) => setPositionId(event.target.value)}><option value="All">All positions</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.title}</option>)}</select></label>
         <label className="filter-field"><span>Stage</span><select aria-label="Workflow stage" value={stageId} onChange={(event) => setStageId(event.target.value)}><option value="All">All stages</option>{stages.map((stage) => <option key={stage.id} value={stage.id}>{stage.name}</option>)}</select></label>
-        <label className="filter-field"><span>Status</span><select aria-label="Application status" value={status} onChange={(event) => setStatus(event.target.value)}><option>All</option><option>Active</option><option>Rejected</option><option>Hired</option><option>Withdrawn</option></select></label>
+        <label className="filter-field"><span>Status</span><select aria-label="Application status" value={status} onChange={(event) => setStatus(event.target.value)}><option>All</option><option>Active</option><option>On Hold</option><option>Rejected</option><option>Hired</option><option>Withdrawn</option></select></label>
         <label className="filter-field"><span>Order</span><select aria-label="Candidate order" value={sort} onChange={(event) => setSort(event.target.value as CandidateSort)}><option value="rank-high">Rank: highest first</option><option value="rank-low">Rank: lowest first</option><option value="newest">Newest submission</option><option value="oldest">Oldest submission</option></select></label>
       </div>
       <div className="candidate-filter-result"><strong>{filteredCount}</strong> candidate{filteredCount === 1 ? '' : 's'} across <strong>{groups.length}</strong> position{groups.length === 1 ? '' : 's'}</div>
@@ -132,7 +136,7 @@ export function CandidatesPage({ role, basePath }: { role: StaffRole; basePath: 
           <tbody>{group.candidates.map((candidate) => <tr key={candidate.id}>
             <td><AppLink to={`${basePath}/${candidate.id}`} className="position-title-link">{candidate.candidate_name || 'Legacy submission'}</AppLink><span>{candidate.candidate_email || 'Contact details unavailable'}</span></td>
             <td><span className="candidate-stage">{candidate.current_stage?.name || 'Stage unavailable'}</span></td>
-            <td><span className={`application-badge application-${candidate.application_status.toLowerCase()}`}>{candidate.application_status}</span></td>
+            <td><span className={`application-badge application-${statusClass(candidate.application_status)}`}>{candidate.application_status}</span></td>
             <td>{candidate.screening?.decision ? <span className={`screening-decision screening-decision-${candidate.screening.decision.toLowerCase()}`}>{candidate.screening.decision} · {Number(candidate.screening.total_score).toFixed(1)}</span> : <span className={`processing-badge processing-${candidate.processing_status.toLowerCase()}`}>{candidate.processing_status === 'Processed' ? 'Awaiting close' : candidate.processing_status}</span>}</td>
             <td>{candidate.screening?.rank ? <strong className="candidate-rank">#{candidate.screening.rank}</strong> : '—'}</td>
             <td>{formatDate(candidate.submitted_at)}</td>

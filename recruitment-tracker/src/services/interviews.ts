@@ -4,7 +4,7 @@ import type { Interview, InterviewFormat, InterviewInput, InterviewerProfile } f
 const interviewFields = `
   id,submission_id,stage_id,interviewer_id,scheduled_start,scheduled_end,format,meeting_url,location,instructions,
   status,actual_start,actual_end,cancellation_reason,
-  candidate:cv_submissions!interviews_submission_id_fkey(id,candidate_name,candidate_email,position:positions!cv_submissions_position_id_fkey(title,department)),
+  candidate:cv_submissions!interviews_submission_id_fkey(id,position_id,candidate_name,candidate_email,position:positions!cv_submissions_position_id_fkey(title,department)),
   stage:recruitment_stages!interviews_stage_id_fkey(name,stage_type),
   interviewer:interviewer_profiles!interviews_interviewer_id_fkey(*),
   notifications:interview_email_notifications!interview_email_notifications_interview_id_fkey(id,notification_type,recipient_kind,status,scheduled_for,sent_at,last_error)

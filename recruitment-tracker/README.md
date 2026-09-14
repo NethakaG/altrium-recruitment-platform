@@ -1,6 +1,6 @@
 # Altrium Recruitment Tracker
 
-Private staff workspace for the Altrium Recruitment Platform. It shares Supabase with the public CV submission portal, implements the four finalized Sprint 1 features, and contains the Sprint 2 Interview Scheduling and Notifications implementation.
+Private staff workspace for the Altrium Recruitment Platform. It shares Supabase with the public CV submission portal, implements the four finalized Sprint 1 features, and contains the first three Sprint 2 features: Interview Scheduling and Notifications, Interview Feedback and Candidate Evaluation, plus Final Hiring Decision and Process Completion.
 
 ## Live deployment
 
@@ -46,7 +46,7 @@ Only browser-safe Supabase configuration belongs in the repository. Local `.env`
 - Candidate applications remain independent when the same person applies to different positions.
 - CV downloads use authenticated 60-second signed URLs; the Storage bucket remains private.
 - Manual progression from CV Review is locked until automatic screening is finalized.
-- After shortlisting, IT Admin or HR can advance active candidates one stage at a time or reject them. Read-only roles cannot progress candidates.
+- After shortlisting, IT Admin or HR can advance candidates through non-interview stages. Interview-stage progression, hold and rejection require submitted interviewer feedback and an HR decision. Read-only roles cannot progress candidates.
 
 ### 4. AI-Assisted CV Screening and Filtering
 
@@ -65,11 +65,11 @@ Only browser-safe Supabase configuration belongs in the repository. Local `.env`
 
 | Role | Main access | Management permissions |
 | --- | --- | --- |
-| IT Admin | Overview, Positions, Workflows, Candidates, Staff Access placeholder | Create/close positions, configure workflows/rubrics, retry extraction/screening, progress/reject candidates, administer Supabase outside the app |
-| HR / Recruiter | Overview, Positions, Workflows, Candidates | Same recruitment-management controls as IT Admin, excluding the Staff Access route |
-| Interviewer | Overview, Positions, Workflows, Assigned Candidates | Read-only access to candidates at permitted interview stages |
-| Hiring Manager | Overview, Positions, Workflows, Candidate Review | Read-only access to candidates at hiring/management review stages |
-| Management User / Executive | Overview, Positions, Workflows, Recruitment Overview | Read-only access to candidates at executive or final review stages |
+| IT Admin | Overview, Positions, Workflows, Candidates, Interviews, Final Decisions, Staff Access placeholder | Create/close positions, configure workflows/rubrics, retry extraction/screening, schedule interviews, review feedback, monitor final decisions, administer Supabase outside the app |
+| HR / Recruiter | Overview, Positions, Workflows, Candidates, Interviews, Final Decisions | Recruitment-management controls, interview scheduling, feedback review, candidate decisions and read-only final-decision monitoring, excluding the Staff Access route |
+| Interviewer | Overview, Positions, Workflows, Assigned Interviews, Calendar | View assigned candidates, control their interviews, save evaluation drafts and submit recommendations |
+| Hiring Manager | Overview, Positions, Workflows, Candidate Review, Final Decisions | Review finalists and evidence, then submit or resubmit Recommend Hire/Reject decisions |
+| Management User / Executive | Overview, Positions, Workflows, Recruitment Overview, Final Decisions | Review the full finalist record and approve or return Hiring Manager recommendations |
 
 Supabase Auth users without an active `staff_profiles` record and assigned role cannot enter the workspace. Authorization is enforced by the protected frontend routes, Postgres privileges/RLS, and role-aware database functions.
 
@@ -84,26 +84,53 @@ Supabase Auth users without an active `staff_profiles` record and assigned role 
 - Weekends and the official 2026 Sri Lankan public holidays are blocked. Meetings, unavailable periods, interviews and the 15-minute post-interview buffer are removed from available times.
 - Online interviews require a meeting link; physical interviews require a location.
 - HR and IT Admin can view interviews, reschedule scheduled interviews, cancel them with a reason, and retry queued or failed emails.
+- The recruiter interview register separates records into position cards and supports combined candidate/interviewer search, position, interview-stage, and status filters.
 - The assigned interviewer can see the candidate/CV, start the interview, continue past the planned end time, and end it manually. Actual start and end timestamps are recorded.
+- Each interviewer's Assigned Interviews page supports search, position and status filters, then organizes results into Today/In Progress, Upcoming, Awaiting Feedback, Earlier, and Completed/Cancelled schedule sections.
 - Scheduling, rescheduling and cancellation emails are queued for both candidate and interviewer. Reminder records are queued for 24 hours and 1 hour before the interview.
 - Gmail delivery is server-side through the `send-interview-emails` Edge Function; the browser never receives Google credentials.
 
+## Sprint 2 — Interview Feedback and Candidate Evaluation
+
+- Feedback remains locked until the assigned interviewer starts the interview.
+- Five fixed criteria are scored from 1–5: Communication, Role Knowledge, Relevant Experience, Problem Solving, and Overall Suitability. A complete evaluation totals 25 points.
+- The interviewer can save partial notes and scores as a draft while the interview is in progress.
+- Ending an interview records the actual end time and changes it to Awaiting Feedback; it does not submit the evaluation automatically.
+- Submission requires all five scores, at least 20 characters of evidence-based notes, and a Proceed, Hold, or Reject recommendation.
+- Submitted feedback can be corrected until HR reviews it. Each corrected submitted version is retained in the feedback history.
+- HR and IT Admin review the submitted evaluation from Interviews. The interviewer recommendation is advisory and never changes the candidate directly.
+- An HR Proceed decision moves the candidate to the next configured stage. Hold keeps the candidate at the same stage with On Hold status, and can later be resolved to Proceed or Reject. Reject ends the candidate workflow while preserving the evaluation record.
+- If HR chooses a different outcome from the interviewer recommendation, a decision explanation of at least 10 characters is required.
+- Direct candidate progression and rejection controls cannot bypass an active interview's feedback decision.
+
+## Sprint 2 — Final Hiring Decision and Process Completion
+
+- Candidates appear in the Final Decisions workspace only after reaching the configured Final Decision workflow stage.
+- Finalists are separated by position and ordered by their position-specific screening rank.
+- Hiring Managers compare the candidate CV/profile, Gemini score and rank, and all available submitted interview evaluations.
+- A Hiring Manager submits either Recommend Hire or Recommend Reject with a justification of at least 20 characters. The recommendation does not change the candidate status.
+- Executives review the same evidence and recommendation, then either approve it or return it with a reason.
+- A returned recommendation leaves the candidate Active at Final Decision and lets a Hiring Manager revise and resubmit it.
+- Approval changes the candidate to Hired or Rejected, while keeping the Final Decision stage and full audit trail.
+- Previous recommendation, return and approval versions are retained in immutable decision history.
+- The database allows only one approved Hired candidate per position. Approving a hire does not automatically reject the remaining finalists; each requires an explicit decision.
+- HR and IT Admin can monitor the complete final-decision state but cannot recommend, approve or bypass the two-step process.
+
 The database migrations seed an open Cloud Platform Engineer demo vacancy with `CV Review → Technical Interview → Final Decision`, a locked five-criterion rubric, three role-specific interviewer profiles, normal working schedules, nine realistic calendar events and the official 2026 Sri Lankan holiday calendar. The live notification address is configured privately in Supabase rather than committed to this public repository.
 
-### Gmail configuration still required
+### Gmail and reminder configuration
 
-Configure the sender Gmail address and OAuth credentials as Edge Function secrets before real delivery:
+The live project has its sender Gmail address and OAuth credentials configured privately as Edge Function secrets. New deployments require:
 
 ```text
 GMAIL_SENDER
 GMAIL_CLIENT_ID
 GMAIL_CLIENT_SECRET
 GMAIL_REFRESH_TOKEN
-INTERVIEW_CRON_SECRET
 ALLOWED_ORIGINS
 ```
 
-Use OAuth offline access with the Gmail send scope; never store the Gmail password. The migration creates an inactive one-minute Cron job named `dispatch-interview-email-reminders`. Store `project_url` and `interview_cron_secret` in Supabase Vault, use the same secret value for the Edge Function's `INTERVIEW_CRON_SECRET`, then activate that job. Immediate messages can be sent or retried from the Interviews page once Gmail OAuth is configured.
+Use OAuth offline access with the Gmail send scope; never store the Gmail password. Immediate delivery is active and has been verified. Automatic reminders are intentionally deferred: the migration creates an inactive one-minute Cron job named `dispatch-interview-email-reminders`. When reminder work resumes, add `INTERVIEW_CRON_SECRET`, store `project_url` and `interview_cron_secret` in Supabase Vault, use the same secret value for the Edge Function, and activate the job.
 
 ## Remaining Sprint 2 placeholders
 
@@ -160,7 +187,7 @@ npm run dev -- --port 5174
 
 ## Supabase setup
 
-The migrations under `supabase/migrations` define staff profiles and authorization, position management, position-specific workflows, candidate access, locked screening rubrics, automatic screening finalization, and candidate progression functions.
+The migrations under `supabase/migrations` define staff profiles and authorization, position management, position-specific workflows, candidate access, locked screening rubrics, automatic screening finalization, interview scheduling, structured feedback, final hiring approvals, audit history, and candidate decision functions.
 
 Apply migrations using a current Supabase CLI after reviewing the target project:
 

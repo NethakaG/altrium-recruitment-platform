@@ -42,4 +42,17 @@ describe('CandidateDetailsPage', () => {
     expect(screen.queryByRole('button', { name: 'Move to next stage' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Reject candidate' })).not.toBeInTheDocument()
   })
+
+  it('routes final-stage outcomes through the protected approval workspace', async () => {
+    vi.mocked(getCandidate).mockResolvedValue({
+      ...candidate,
+      current_stage_id: 'stage-2',
+      current_stage: { id: 'stage-2', name: 'Final Decision', stage_order: 2, stage_type: 'final_decision' },
+      screening: { criterion_scores: [], total_score: 88, summary: '', screening_model: 'gemini', screened_at: '', rank: 1, decision: 'Shortlisted' },
+    })
+    render(<CandidateDetailsPage candidateId="candidate-1" basePath="/candidates" canManage />)
+    expect(await screen.findByText('Final approval required')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Open final decisions' })).toHaveAttribute('href', '/final-decisions')
+    expect(screen.queryByRole('button', { name: 'Reject candidate' })).not.toBeInTheDocument()
+  })
 })

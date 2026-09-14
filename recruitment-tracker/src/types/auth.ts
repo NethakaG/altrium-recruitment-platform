@@ -32,14 +32,14 @@ export const roleDefinitions: Record<StaffRole, RoleDefinition> = {
     shortLabel: 'IT Admin',
     summary: 'Staff access and Supabase operations',
     accent: '#fcb400',
-    routes: ['/', '/positions', '/workflows', '/candidates', '/interviews', '/staff-access'],
+    routes: ['/', '/positions', '/workflows', '/candidates', '/interviews', '/final-decisions', '/staff-access'],
   },
   hr_recruiter: {
     label: 'HR / Recruiter',
     shortLabel: 'HR',
     summary: 'Positions, workflows, CVs and screening',
     accent: '#fcb400',
-    routes: ['/', '/positions', '/workflows', '/candidates', '/interviews'],
+    routes: ['/', '/positions', '/workflows', '/candidates', '/interviews', '/final-decisions'],
   },
   interviewer: {
     label: 'Interviewer',
@@ -51,16 +51,16 @@ export const roleDefinitions: Record<StaffRole, RoleDefinition> = {
   hiring_manager: {
     label: 'Hiring Manager',
     shortLabel: 'Hiring Manager',
-    summary: 'Candidate and screening review',
+    summary: 'Candidate review and final recommendations',
     accent: '#fcb400',
-    routes: ['/', '/positions', '/workflows', '/candidate-review'],
+    routes: ['/', '/positions', '/workflows', '/candidate-review', '/final-decisions'],
   },
   management_user: {
     label: 'Management User / Executive',
     shortLabel: 'Management',
-    summary: 'Read-only recruitment overview',
+    summary: 'Recruitment overview and final approvals',
     accent: '#fcb400',
-    routes: ['/', '/positions', '/workflows', '/overview'],
+    routes: ['/', '/positions', '/workflows', '/overview', '/final-decisions'],
   },
 }
 

@@ -16,6 +16,10 @@ function formatSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
 
+function statusClass(value: string) {
+  return value.toLowerCase().replaceAll(' ', '-')
+}
+
 export function CandidateDetailsPage({ candidateId, basePath, canManage }: { candidateId: string; basePath: string; canManage: boolean }) {
   const [candidate, setCandidate] = useState<Candidate | null>(null)
   const [stages, setStages] = useState<RecruitmentStage[]>([])
@@ -64,14 +68,15 @@ export function CandidateDetailsPage({ candidateId, basePath, canManage }: { can
 
   const profile = candidate.extracted_profile || {}
   const orderedStages = [...stages].sort((a, b) => a.stage_order - b.stage_order)
-  const isFinalStage = candidate.current_stage?.stage_order === orderedStages.at(-1)?.stage_order
   const screeningFinalized = Boolean(candidate.screening?.decision)
+  const isInterviewStage = ['hr_interview', 'technical_interview', 'hiring_manager_interview', 'engineering_manager_interview', 'executive_interview'].includes(candidate.current_stage?.stage_type ?? '')
+  const isFinalDecisionStage = candidate.current_stage?.stage_type === 'final_decision'
 
   return <div className="page-shell candidate-detail-page">
     <AppLink to={basePath} className="back-link">← Back to candidates</AppLink>
     <header className="candidate-detail-header">
       <div><span className="eyebrow dark">Candidate profile</span><h1>{candidate.candidate_name || profile.extracted_name || 'Legacy submission'}</h1><p>{candidate.position?.title} · Submitted {formatDate(candidate.submitted_at)}</p></div>
-      <div className="candidate-header-actions"><span className={`application-badge application-${candidate.application_status.toLowerCase()}`}>{candidate.application_status}</span><button type="button" className="secondary-button" disabled={busy === 'download'} onClick={() => void downloadCv()}>{busy === 'download' ? 'Preparing…' : 'Download CV'}</button></div>
+      <div className="candidate-header-actions"><span className={`application-badge application-${statusClass(candidate.application_status)}`}>{candidate.application_status}</span><button type="button" className="secondary-button" disabled={busy === 'download'} onClick={() => void downloadCv()}>{busy === 'download' ? 'Preparing…' : 'Download CV'}</button></div>
     </header>
 
     {message && <div className="candidate-message">{message}</div>}
@@ -96,10 +101,10 @@ export function CandidateDetailsPage({ candidateId, basePath, canManage }: { can
 
       <aside className="candidate-detail-aside">
         <section><span>Current stage</span><h2>{candidate.current_stage?.name || 'Unavailable'}</h2><ol>{orderedStages.map((stage) => <li key={stage.id} className={stage.id === candidate.current_stage_id ? 'current' : stage.stage_order < (candidate.current_stage?.stage_order ?? 0) ? 'complete' : ''}><i>{stage.stage_order}</i><span>{stage.name}</span></li>)}</ol></section>
-        {canManage && candidate.application_status === 'Active' && candidate.current_stage?.stage_type !== 'cv_review' ? <div className="candidate-actions">
-          <button type="button" className="primary-button" disabled={Boolean(busy) || isFinalStage} onClick={() => void run('advance', () => advanceCandidate(candidate.id), 'Candidate moved to the next workflow stage.')}>{busy === 'advance' ? 'Moving…' : isFinalStage ? 'Final stage reached' : 'Move to next stage'}</button>
+        {canManage && candidate.application_status === 'Active' && isFinalDecisionStage ? <div className="candidate-actions candidate-actions-locked"><strong>Final approval required</strong><span>Hiring Managers submit the recommendation and Executives record the outcome in Final Decisions.</span><AppLink to="/final-decisions" className="secondary-button">Open final decisions</AppLink></div> : canManage && candidate.application_status === 'Active' && candidate.current_stage?.stage_type !== 'cv_review' && !isInterviewStage ? <div className="candidate-actions">
+          <button type="button" className="primary-button" disabled={Boolean(busy)} onClick={() => void run('advance', () => advanceCandidate(candidate.id), 'Candidate moved to the next workflow stage.')}>{busy === 'advance' ? 'Moving…' : 'Move to next stage'}</button>
           <button type="button" className="danger-button" disabled={Boolean(busy)} onClick={() => void run('reject', () => setCandidateStatus(candidate.id, 'Rejected'), 'Candidate marked as rejected.')}>{busy === 'reject' ? 'Updating…' : 'Reject candidate'}</button>
-        </div> : canManage && candidate.application_status === 'Active' && candidate.current_stage?.stage_type === 'cv_review' ? <div className="candidate-actions candidate-actions-locked"><strong>Awaiting automatic screening</strong><span>Progression is locked until the position closes and the full candidate pool is ranked.</span></div> : null}
+        </div> : canManage && candidate.application_status === 'Active' && candidate.current_stage?.stage_type === 'cv_review' ? <div className="candidate-actions candidate-actions-locked"><strong>Awaiting automatic screening</strong><span>Progression is locked until the position closes and the full candidate pool is ranked.</span></div> : canManage && isInterviewStage && ['Active', 'On Hold'].includes(candidate.application_status) ? <div className="candidate-actions candidate-actions-locked"><strong>Interview decision required</strong><span>Schedule and manage the interview here. Progression, hold and rejection are applied from submitted interviewer feedback in Interviews.</span></div> : null}
         <section className="cv-file-card"><span>Original CV</span><strong>{candidate.original_filename}</strong><small>{formatSize(candidate.file_size)} · {candidate.processing_status}</small>{canManage && ['Pending', 'Failed'].includes(candidate.processing_status) ? <button type="button" className="text-button" disabled={Boolean(busy)} onClick={() => void run('retry', () => retryCvExtraction(candidate.id), 'CV extraction started. Refresh shortly to see the result.')}>{busy === 'retry' ? 'Starting…' : candidate.processing_status === 'Pending' ? 'Start extraction' : 'Retry extraction'}</button> : null}</section>
       </aside>
     </div>
