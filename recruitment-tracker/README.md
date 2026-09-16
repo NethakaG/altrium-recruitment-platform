@@ -1,6 +1,6 @@
 # Altrium Recruitment Tracker
 
-Private staff workspace for the Altrium Recruitment Platform. It shares Supabase with the public CV submission portal, implements the four finalized Sprint 1 features, and contains the first three Sprint 2 features: Interview Scheduling and Notifications, Interview Feedback and Candidate Evaluation, plus Final Hiring Decision and Process Completion.
+Private staff workspace for the Altrium Recruitment Platform. It shares Supabase with the public CV submission portal, implements the four finalized Sprint 1 features, and contains all four current Sprint 2 features: Interview Scheduling and Notifications, Interview Feedback and Candidate Evaluation, Final Hiring Decision and Process Completion, plus Management Dashboard, Reporting and Staff User Management.
 
 ## Live deployment
 
@@ -65,7 +65,7 @@ Only browser-safe Supabase configuration belongs in the repository. Local `.env`
 
 | Role | Main access | Management permissions |
 | --- | --- | --- |
-| IT Admin | Overview, Positions, Workflows, Candidates, Interviews, Final Decisions, Staff Access placeholder | Create/close positions, configure workflows/rubrics, retry extraction/screening, schedule interviews, review feedback, monitor final decisions, administer Supabase outside the app |
+| IT Admin | Overview, Positions, Workflows, Candidates, Interviews, Final Decisions, Staff Access | Monitor recruitment/system health, manage staff invitations, roles and account status, plus all authorized recruitment controls |
 | HR / Recruiter | Overview, Positions, Workflows, Candidates, Interviews, Final Decisions | Recruitment-management controls, interview scheduling, feedback review, candidate decisions and read-only final-decision monitoring, excluding the Staff Access route |
 | Interviewer | Overview, Positions, Workflows, Assigned Interviews, Calendar | View assigned candidates, control their interviews, save evaluation drafts and submit recommendations |
 | Hiring Manager | Overview, Positions, Workflows, Candidate Review, Final Decisions | Review finalists and evidence, then submit or resubmit Recommend Hire/Reject decisions |
@@ -116,6 +116,20 @@ Supabase Auth users without an active `staff_profiles` record and assigned role 
 - The database allows only one approved Hired candidate per position. Approving a hire does not automatically reject the remaining finalists; each requires an explicit decision.
 - HR and IT Admin can monitor the complete final-decision state but cannot recommend, approve or bypass the two-step process.
 
+## Sprint 2 — Management Dashboard, Reporting and Staff User Management
+
+- Every active staff role receives a different Overview page calculated only from records that its database role is allowed to read.
+- HR / Recruiter sees open and closed positions, candidate totals, extraction/screening failures, upcoming interviews, feedback due and returned final recommendations.
+- Interviewer sees today's assignments, upcoming and in-progress interviews, feedback due and a direct calendar action.
+- Hiring Manager sees permitted candidate/finalist records and final recommendation states including pending, returned and approved.
+- Management User / Executive sees the high-level position funnel, pending approvals, hired/rejected outcomes and average position duration.
+- IT Admin sees recruitment operations together with active staff counts, active IT Admin count, processing/email failures and incomplete position configuration.
+- Relevant dashboard views can be narrowed to one position; timestamps are displayed in Sri Lanka time.
+- Staff Access lets IT Admins search and filter staff, invite new staff by email, assign roles, update names, activate/deactivate access and review the latest 100 access changes.
+- Invitations are sent through a JWT-protected Supabase Edge Function. The Supabase service-role credential remains server-side and is never exposed to the browser.
+- Invitees create their own password at `/set-password`; passwords are never chosen or displayed by an IT Admin.
+- Direct browser updates to staff roles/status are blocked. All changes pass through an audited Postgres function that prevents an IT Admin from deactivating/demoting themselves and prevents removal of the final active IT Admin.
+
 The database migrations seed an open Cloud Platform Engineer demo vacancy with `CV Review → Technical Interview → Final Decision`, a locked five-criterion rubric, three role-specific interviewer profiles, normal working schedules, nine realistic calendar events and the official 2026 Sri Lankan holiday calendar. The live notification address is configured privately in Supabase rather than committed to this public repository.
 
 ### Gmail and reminder configuration
@@ -131,13 +145,6 @@ ALLOWED_ORIGINS
 ```
 
 Use OAuth offline access with the Gmail send scope; never store the Gmail password. Immediate delivery is active and has been verified. Automatic reminders are intentionally deferred: the migration creates an inactive one-minute Cron job named `dispatch-interview-email-reminders`. When reminder work resumes, add `INTERVIEW_CRON_SECRET`, store `project_url` and `interview_cron_secret` in Supabase Vault, use the same secret value for the Edge Function, and activate the job.
-
-## Remaining Sprint 2 placeholders
-
-- The main Overview page currently keeps only the personalized greeting and active-workspace message. Role-specific statistics, progress summaries, and management reporting are marked for Sprint 2 under Backlog Feature 9.
-- Staff Access is a protected IT Admin route, but the in-app staff account-management interface is intentionally not implemented. Staff accounts and roles are currently managed through trusted Supabase administration.
-
-These placeholders are not part of the first four Sprint 1 backlog features.
 
 ## Operational notes
 
@@ -198,7 +205,14 @@ npx supabase db push --dry-run
 npx supabase db push
 ```
 
-Sprint 1 Edge Functions are stored in the sibling `cv-submission-portal/supabase/functions` directory. Interview email delivery is stored at `recruitment-tracker/supabase/functions/send-interview-emails`. `ALLOWED_ORIGINS` must contain both local and deployed frontend origins. Gemini and Gmail credentials belong only in Supabase Edge Function secrets.
+Sprint 1 Edge Functions are stored in the sibling `cv-submission-portal/supabase/functions` directory. Interview email delivery is stored at `recruitment-tracker/supabase/functions/send-interview-emails`, and secured staff invitations are stored at `recruitment-tracker/supabase/functions/invite-staff-user`. `ALLOWED_ORIGINS` must contain both local and deployed frontend origins. Gemini and Gmail credentials belong only in Supabase Edge Function secrets.
+
+For staff invitations, add both the deployed and local password routes to Supabase Auth's allowed redirect URLs, for example:
+
+```text
+https://altrium-recruitment-tracker.nethaka-galagedera.workers.dev/set-password
+http://127.0.0.1:5174/set-password
+```
 
 ## Cloudflare deployment
 

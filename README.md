@@ -1,6 +1,6 @@
 # Altrium Recruitment Platform
 
-Altrium is a two-application recruitment platform. Sprint 1 covers position, workflow, candidate/CV and automatic screening management. Sprint 2 development currently adds interview scheduling, notifications, feedback, candidate evaluation and controlled final hiring decisions to the protected tracker. Both applications use the same Supabase backend.
+Altrium is a two-application recruitment platform. Sprint 1 covers position, workflow, candidate/CV and automatic screening management. Sprint 2 adds interview scheduling, notifications, feedback, candidate evaluation, controlled final hiring decisions, role-specific management dashboards and IT Admin staff access management to the protected tracker. Both applications use the same Supabase backend.
 
 ## Live applications
 
@@ -33,7 +33,9 @@ Interview Feedback and Candidate Evaluation now unlocks after Start Interview, s
 
 Final Hiring Decision and Process Completion gives Hiring Managers a position-grouped finalist comparison workspace with CV, Gemini score/rank and prior interview evidence. A Hiring Manager submits Recommend Hire or Recommend Reject with a justification; an Executive must approve it or return it for reconsideration. Approval records the final Hired/Rejected status and immutable decision history. One position can have only one approved hire, and other finalists are never rejected automatically.
 
-Live immediate Gmail delivery is configured. Automatic reminder dispatch remains intentionally deferred until the end of Sprint 2. The three interviewer profiles are connected to active staff accounts in the live project; their private login and contact details are intentionally not committed. Management dashboard reporting remains later Sprint 2 work.
+Management Dashboard and Reporting gives every staff role an overview limited to its permitted data. Recruiters see the live funnel and operational action queue, interviewers see their agenda and feedback workload, Hiring Managers see finalist/recommendation progress, Executives see approvals and outcomes, and IT Admins see recruitment health plus staff/module warnings. IT Admins can also invite staff by email, assign or change roles, activate/deactivate accounts and review access history. Database safeguards prevent self-lockout and removal of the final active IT Admin.
+
+Live immediate Gmail delivery is configured. Automatic reminder dispatch remains intentionally deferred until the end of Sprint 2. The three interviewer profiles are connected to active staff accounts in the live project; their private login and contact details are intentionally not committed.
 
 ## Roles
 

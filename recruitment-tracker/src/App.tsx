@@ -19,6 +19,8 @@ import { AssignmentsPage } from './pages/AssignmentsPage'
 import { AvailabilityPage } from './pages/AvailabilityPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { FinalDecisionsPage } from './pages/FinalDecisionsPage'
+import { StaffAccessPage } from './pages/StaffAccessPage'
+import { SetPasswordPage } from './pages/SetPasswordPage'
 
 function LoadingScreen() {
   return <main className="state-page"><div className="loading-mark" aria-label="Checking staff access"><span>A</span></div></main>
@@ -29,7 +31,7 @@ export default function App() {
   const { status, profile } = useAuth()
 
   useEffect(() => {
-    const isPublicPath = path === '/login' || path === '/privacy'
+    const isPublicPath = path === '/login' || path === '/privacy' || path === '/set-password'
     if (status === 'signed_out' && !isPublicPath) navigate('/login')
     if (status === 'active' && path === '/login') navigate('/')
     if (status === 'pending' && path !== '/access-pending' && path !== '/privacy') navigate('/access-pending')
@@ -37,6 +39,7 @@ export default function App() {
 
   if (path === '/privacy') return <PrivacyPage />
   if (status === 'loading') return <LoadingScreen />
+  if (path === '/set-password') return <SetPasswordPage />
   if (path === '/login') return <LoginPage />
   if (status === 'pending' || path === '/access-pending') return <AccessPendingPage />
   if (status !== 'active' || !profile?.role) return <LoadingScreen />
@@ -57,6 +60,7 @@ export default function App() {
   else if (path === '/assignments') content = <AssignmentsPage />
   else if (path === '/availability') content = <AvailabilityPage />
   else if (path === '/final-decisions') content = <FinalDecisionsPage role={profile.role} basePath={candidatePath} />
+  else if (path === '/staff-access') content = <StaffAccessPage />
   else if (path === candidatePath) content = <CandidatesPage role={profile.role} basePath={candidatePath} />
   else if (path.startsWith(`${candidatePath}/`)) content = <CandidateDetailsPage candidateId={decodeURIComponent(path.slice(candidatePath.length + 1))} basePath={candidatePath} canManage={canManageCandidates(profile.role)} />
   else content = <ModulePlaceholderPage path={path} role={profile.role} />

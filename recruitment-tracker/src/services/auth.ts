@@ -22,6 +22,11 @@ export async function signOut(): Promise<void> {
   if (error) throw error
 }
 
+export async function updatePassword(password: string): Promise<void> {
+  const { error } = await getSupabaseClient().auth.updateUser({ password })
+  if (error) throw error
+}
+
 export async function getStaffProfile(userId: string): Promise<StaffProfile | null> {
   const { data, error } = await getSupabaseClient()
     .from('staff_profiles')
